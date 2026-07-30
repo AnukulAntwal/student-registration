@@ -1,4 +1,5 @@
 const express = require('express');
+const path = require('path');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
@@ -11,25 +12,34 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+const clientDistPath = path.join(__dirname, '..', 'client', 'dist');
+app.use(express.static(clientDistPath));
+
 let mongoServer;
 
 async function connectDatabase() {
   if (process.env.MONGO_URI) {
-    await mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true });
+    await mongoose.connect(process.env.MONGO_URI);
     console.log('MongoDB connected to provided URI');
     return;
   }
 
   mongoServer = await MongoMemoryServer.create();
   const uri = mongoServer.getUri();
-  await mongoose.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+  await mongoose.connect(uri);
   console.log('MongoDB connected to in-memory server');
 }
 
-connectDatabase().catch((err) => {
-  console.error('MongoDB error:', err);
-  process.exit(1);
-});
+async function startServer() {
+  try {
+    await connectDatabase();
+    const PORT = process.env.PORT || 5000;
+    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+  } catch (error) {
+    console.error('MongoDB error:', error);
+    process.exit(1);
+  }
+}
 
 const studentSchema = new mongoose.Schema({
   name: { type: String, required: true, trim: true },
@@ -43,7 +53,15 @@ const studentSchema = new mongoose.Schema({
 
 const Student = mongoose.model('Student', studentSchema);
 
+app.get('/', (req, res) => res.json({ message: 'Student registration API is running' }));
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
+
+app.get('*', (req, res) => {
+  if (req.path.startsWith('/api')) {
+    return res.status(404).json({ message: 'API route not found' });
+  }
+  res.sendFile(path.join(clientDistPath, 'index.html'));
+});
 
 app.post('/api/students', [
   body('name').trim().isLength({ min: 2, max: 80 }).withMessage('Name must be between 2 and 80 characters'),
@@ -76,5 +94,8 @@ app.get('/api/students', async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+if (require.main === module) {
+  startServer();
+}
+
+module.exports = app;
