@@ -81,7 +81,7 @@ function App() {
 
   const handleAdminLogin = (e) => {
     e.preventDefault();
-    if (adminForm.username === 'admin' && adminForm.password === '123456') {
+    if (adminForm.username === 'rahul' && adminForm.password === 'Rahul@123') {
       setAdminLoggedIn(true);
       setAdminForm({ username: '', password: '' });
       navigate('/admin');
