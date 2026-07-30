@@ -3,7 +3,7 @@ import { Link, Navigate, Route, Routes, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import toast, { Toaster } from 'react-hot-toast';
 
-const API = 'https://student-registration-1-eeaj.onrender.com';
+const API = 'https://student-registration-1-eeaj.onrender.com/api';
 
 function App() {
   const [form, setForm] = useState({ name: '', fatherName: '', age: '', className: '', mobileNumber: '', schoolName: '' });
